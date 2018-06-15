@@ -24,18 +24,16 @@ public class Parser {
 		return lineNumber;
 	}
 
-	public boolean parse() throws ParsingException, IOError {
+	public void parse() throws ParsingException, IOError {
 		while (scanObj.hasNext()){
 			String line = getNextLine();
-			if (! isWhitespaceOnly(line) || isComment(line)) {
-				System.out.println(line);
-				System.out.println("hi");
+			if (! isWhitespaceOnly(line) && ! isComment(line)) {
 				if (isVariableDeclaration(line)){
 					String declarationLine = line.split(";")[0];
 					String[] separatedBySpaces = declarationLine.split("\\s+");
 					String variablesType = separatedBySpaces[0];
 					String[] variablesWithoutType = Arrays.copyOfRange(separatedBySpaces,
-							1, separatedBySpaces.length-1);
+							1, separatedBySpaces.length);
 					String variablesString = String.join("", variablesWithoutType);
 					String[] separatedByCommas = variablesString.split(",");
 					for (String variable: separatedByCommas) {
@@ -46,7 +44,6 @@ public class Parser {
 				}
 			}
 		}
-		return true;
 	}
 
 	private boolean isVariableAssignment(String line) {
@@ -66,7 +63,7 @@ public class Parser {
 	}
 
 	private static boolean isComment(String line) {
-		String commentString = "^\\\\";
+		String commentString = "^[\\/][\\/]";
 		Pattern pattern = Pattern.compile(commentString);
 		Matcher matcher = pattern.matcher(line);
 
