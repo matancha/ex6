@@ -10,7 +10,7 @@ public class Parser {
 	private static final Pattern COMMENT_LINE = Pattern.compile("^[\\/][\\/]");
 	private static final Pattern WHITESPACE_LINE = Pattern.compile("\\s*");
 	private static final Pattern VARIABLE_DECLARATION_LINE =
-			Pattern.compile(" *(int|char|double|String|boolean) +([^;]*);$");
+			Pattern.compile("( *final )? *(int|char|double|String|boolean) +([^;]*);$");
 	private static final Pattern VARIABLE_ASSIGNMENT_LINE = Pattern.compile("^ *([^=\\s]+) *= *(\\S*) *;$");
 
 	private int lineNumber;
@@ -56,20 +56,25 @@ public class Parser {
 	}
 
 	private void parseVariableDeclarationLine(Matcher matcher) throws ParsingException {
-		String variableType = matcher.group(1);
-		for (String section: matcher.group(2).split(",")) {
+		boolean isFinal = isFinalVariable(matcher.group(1));
+		String variableType = matcher.group(2);
+		for (String section: matcher.group(3).split(",")) {
 			Matcher declarationOnlyMatcher = VARIABLE_DECLARATION.matcher(section);
 			Matcher assignmentMatcher = VARIABLE_ASSIGNMENT.matcher(section);
 			if (declarationOnlyMatcher.matches()) {
 				String variableName = declarationOnlyMatcher.group(1);
-				globalScope.addVariable(variableName, new Variable(variableType, variableName));
+				globalScope.addVariable(variableName, new Variable(variableType, variableName, isFinal));
 			} else if (assignmentMatcher.matches()) {
 				String variableName = assignmentMatcher.group(1);
-				Variable variable = new Variable(variableType, variableName);
+				Variable variable = new Variable(variableType, variableName, isFinal);
 				globalScope.addVariable(variableName, variable);
 				assignValue(assignmentMatcher, variable);
 			}
 		}
+	}
+
+	private boolean isFinalVariable(String answer) {
+		return (answer != null);
 	}
 
 	private void assignValue(Matcher assignmentMatcher, Variable variable) throws ParsingException {

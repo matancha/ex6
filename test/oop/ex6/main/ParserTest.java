@@ -35,8 +35,8 @@ public class ParserTest {
         testPassing(new File("resources/simple_assignment.txt"));
     }
 
-    @Test
-    public void initializingExistingVariable() throws FileNotFoundException {
+    @Test(expected = DoubleDeclarationException.class)
+    public void initializingExistingVariable() throws Exception {
         testFailing(new File("resources/initializing_initialized.txt"));
     }
 
@@ -45,9 +45,14 @@ public class ParserTest {
         testPassing(new File("resources/assigning_variable_to_another.txt"));
     }
 
-    @Test
-    public void assigningUndeclaredVariable() throws FileNotFoundException {
+    @Test(expected = UndeclaredVariableException.class)
+    public void assigningUndeclaredVariable() throws Exception {
         testFailing(new File("resources/assigning_undeclared_variable.txt"));
+    }
+
+    @Test(expected = FinalVariableAssignmentException.class)
+    public void assigningFinalVariableAfterInitialized() throws Exception {
+        testFailing(new File("resources/assigning_final_variable.txt"));
     }
 
     private void testPassing(File testFile) throws FileNotFoundException {
@@ -61,13 +66,9 @@ public class ParserTest {
         }
     }
 
-    private void testFailing(File testFile) throws FileNotFoundException {
+    private void testFailing(File testFile) throws FileNotFoundException, ParsingException {
         Scanner scanner = new Scanner(testFile);
         Parser parseObj = new Parser(scanner);
-        try {
-            parseObj.parse();
-            fail();
-        } catch (ParsingException e) {
-        }
+        parseObj.parse();
     }
 }

@@ -5,13 +5,15 @@ public class Variable {
 	private String name;
 	private String type;
 	private String value;
+	private boolean isFinal;
 
-	public Variable(String type, String name) throws ParsingException {
+	public Variable(String type, String name, boolean isFinal) throws ParsingException {
 		if (! isNameValid(name)) {
 			throw new InvalidVariableNameException();
 		}
 		this.type = type;
 		this.name = name;
+		this.isFinal = isFinal;
 	}
 
 	public static boolean isNameValid(String name) {
@@ -22,18 +24,15 @@ public class Variable {
 		return matcher.matches();
 	}
 
-	public String getType() {
-		return type;
-	}
-
 	public String getValue() {
 		return value;
 	}
 
-	public void setValue(String value) throws InvalidValueException {
+	public void setValue(String value) throws ParsingException {
 		if (! isValueValid(value)) {
-			System.out.println(value);
 			throw new InvalidValueException();
+		} else if (isFinal && value != null) {
+			throw new FinalVariableAssignmentException();
 		}
 		this.value = value;
 	}
@@ -62,7 +61,7 @@ public class Variable {
 		return matcher.matches();
 	}
 
-	public void copyVariableValue(Variable copiedVariable) throws InvalidValueException {
+	public void copyVariableValue(Variable copiedVariable) throws ParsingException {
 		String copiedValue = copiedVariable.getValue();
 		setValue(copiedValue);
 	}
