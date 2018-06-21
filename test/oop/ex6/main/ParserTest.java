@@ -45,6 +45,11 @@ public class ParserTest {
         testPassing(new File("resources/assigning_variable_to_another.txt"));
     }
 
+    @Test
+    public void assigningUndeclaredVariable() throws FileNotFoundException {
+        testFailing(new File("resources/assigning_undeclared_variable.txt"));
+    }
+
     private void testPassing(File testFile) throws FileNotFoundException {
         Scanner scanner = new Scanner(testFile);
         Parser parseObj = new Parser(scanner);
@@ -63,7 +68,6 @@ public class ParserTest {
             parseObj.parse();
             fail();
         } catch (ParsingException e) {
-
         }
     }
 }
