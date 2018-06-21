@@ -28,16 +28,39 @@ public class Parser {
 		while (scanObj.hasNext()){
 			String line = getNextLine();
 			if (! isWhitespaceOnly(line) && ! isComment(line)) {
-				if (isVariableDeclaration(line)){
-					String declarationLine = line.split(";")[0];
-					String[] separatedBySpaces = declarationLine.split("\\s+");
-					String variablesType = separatedBySpaces[0];
-					String[] variablesWithoutType = Arrays.copyOfRange(separatedBySpaces,
-							1, separatedBySpaces.length);
-					String variablesString = String.join("", variablesWithoutType);
-					String[] separatedByCommas = variablesString.split(",");
-					for (String variable: separatedByCommas) {
-						globalScope.addVariable(variable, new Variable(variablesType, variable));
+				Matcher varDec = getVariableDeclarationPattern().matcher(line);
+				Matcher varAssign = getVariableAssignmentPattern().matcher(line);
+				if (varDec.matches()) {
+					Pattern declarationOnly = Pattern.compile("^ *(\\S+) *$");
+					Pattern assignment = Pattern.compile(" *([^=\\s]+) *= *(\\S*) *$");
+					String variableType = varDec.group(1);
+					for (String section: varDec.group(2).split(",")) {
+						Matcher decMatch = declarationOnly.matcher(section);
+						Matcher assignMatch = assignment.matcher(section);
+						if (decMatch.matches()) {
+							String variableName = decMatch.group(1);
+							Variable varObj = new Variable(variableType, variableName);
+							globalScope.addVariable(variableName, varObj);
+						} else if (assignMatch.matches()) {
+							String variableName = assignMatch.group(1);
+							Variable varObj = new Variable(variableType, variableName);
+							globalScope.addVariable(variableName, varObj);
+							if (Variable.isNameValid(assignMatch.group(2))) {
+								Variable assignedVariable = globalScope.getVariable(assignMatch.group(2));
+								varObj.copyVariableValue(assignedVariable);
+							} else {
+								String variableValue = assignMatch.group(2);
+								varObj.setValue(variableValue);
+							}
+						}
+					}
+				} else if (varAssign.matches()) {
+					String variableName = varAssign.group(1);
+					Variable assignedVariable = globalScope.getVariable(variableName);
+					if (Variable.isNameValid(varAssign.group(2))) {
+						assignedVariable.copyVariableValue(globalScope.getVariable(varAssign.group(2)));
+					} else {
+						assignedVariable.setValue(varAssign.group(2));
 					}
 				} else {
 					throw new IllegalLineException();
@@ -46,20 +69,14 @@ public class Parser {
 		}
 	}
 
-	private boolean isVariableAssignment(String line) {
-		String variableAssignment = "=";
-		Pattern pattern = Pattern.compile(variableAssignment);
-		Matcher matcher = pattern.matcher(line);
-
-		return matcher.find();
+	private static Pattern getVariableAssignmentPattern() {
+		String variableAssignment = "^ *([^=\\s]+) *= *(\\S*) *;$";
+		return Pattern.compile(variableAssignment);
 	}
 
-	private static boolean isVariableDeclaration(String line) {
-		String variableDeclaration = "^(int|double|String|boolean|char)\\b";
-		Pattern pattern = Pattern.compile(variableDeclaration);
-		Matcher matcher = pattern.matcher(line);
-
-		return matcher.find();
+	private static Pattern getVariableDeclarationPattern() {
+		String variableDeclaration = " *(int|char|double|String|boolean) +([^;]*)[;]$";
+		return Pattern.compile(variableDeclaration);
 	}
 
 	private static boolean isComment(String line) {

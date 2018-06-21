@@ -35,6 +35,16 @@ public class ParserTest {
         testPassing(new File("resources/simple_assignment.txt"));
     }
 
+    @Test
+    public void initializingExistingVariable() throws FileNotFoundException {
+        testFailing(new File("resources/initializing_initialized.txt"));
+    }
+
+    @Test
+    public void assigningVariableToAnother() throws FileNotFoundException {
+        testPassing(new File("resources/assigning_variable_to_another.txt"));
+    }
+
     private void testPassing(File testFile) throws FileNotFoundException {
         Scanner scanner = new Scanner(testFile);
         Parser parseObj = new Parser(scanner);
@@ -43,6 +53,17 @@ public class ParserTest {
         } catch (ParsingException e) {
             System.err.println(parseObj.getLineNumber() + ": " + e.getMsg());
             fail();
+        }
+    }
+
+    private void testFailing(File testFile) throws FileNotFoundException {
+        Scanner scanner = new Scanner(testFile);
+        Parser parseObj = new Parser(scanner);
+        try {
+            parseObj.parse();
+            fail();
+        } catch (ParsingException e) {
+
         }
     }
 }
