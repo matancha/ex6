@@ -8,12 +8,12 @@ public class Variable {
 	private boolean isFinal;
 
 	public Variable(String type, String name, boolean isFinal) throws ParsingException {
-		if (! isNameValid(name)) {
-			throw new InvalidVariableNameException();
-		}
 		this.type = type;
 		this.name = name;
 		this.isFinal = isFinal;
+		if (! isNameValid(this.name)) {
+			throw new InvalidVariableNameException();
+		}
 	}
 
 	public static boolean isNameValid(String name) {

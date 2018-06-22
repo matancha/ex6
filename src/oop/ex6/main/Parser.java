@@ -5,13 +5,15 @@ import java.util.*;
 import java.util.regex.*;
 
 public class Parser {
-	private static final Pattern VARIABLE_DECLARATION = Pattern.compile(" *(\\S+) *");
-	private static final Pattern VARIABLE_ASSIGNMENT = Pattern.compile(" *([^=\\s]+) *= *(\\S*) *");
+	private static final Pattern VARIABLE_DECLARATION = Pattern.compile("\\s*(\\S+)\\s*");
+	private static final Pattern VARIABLE_ASSIGNMENT = Pattern.compile("\\s*([^=\\s]+)\\s*=\\s*(\\S*)\\s*");
 	private static final Pattern COMMENT_LINE = Pattern.compile("^[\\/][\\/]");
 	private static final Pattern WHITESPACE_LINE = Pattern.compile("\\s*");
 	private static final Pattern VARIABLE_DECLARATION_LINE =
-			Pattern.compile("( *final )? *(int|char|double|String|boolean) +([^;]*);$");
-	private static final Pattern VARIABLE_ASSIGNMENT_LINE = Pattern.compile("^ *([^=\\s]+) *= *(\\S*) *;$");
+			Pattern.compile("\\s*(int|char|double|String|boolean)\\s+([^;]*);$");
+	private static final Pattern FINAL_VARIABLE_DECLARATION_LINE =
+			Pattern.compile("\\s*final\\s+(int|char|double|String|boolean)\\s+([^;]*);$");
+	private static final Pattern VARIABLE_ASSIGNMENT_LINE = Pattern.compile("^\\s*([^=\\s]+)\\s*=\\s*(\\S*)\\s*;$");
 
 	private int lineNumber;
 	private Scanner scanObj;
@@ -38,8 +40,11 @@ public class Parser {
 			if (! isWhitespaceOnly(line) && ! isComment(line)) {
 				Matcher variableDeclarationMatcher = VARIABLE_DECLARATION_LINE.matcher(line);
 				Matcher variableAssignmentMatcher = VARIABLE_ASSIGNMENT_LINE.matcher(line);
+				Matcher finalVariableDeclarationMatcher = FINAL_VARIABLE_DECLARATION_LINE.matcher(line);
 				if (variableDeclarationMatcher.matches()) {
 					parseVariableDeclarationLine(variableDeclarationMatcher);
+				} else if (finalVariableDeclarationMatcher.matches()) {
+					parseFinalVariableDeclarationLine(finalVariableDeclarationMatcher);
 				} else if (variableAssignmentMatcher.matches()) {
 					parseVariableAssignmentLine(variableAssignmentMatcher);
 				} else {
@@ -49,32 +54,44 @@ public class Parser {
 		}
 	}
 
-	private void parseVariableAssignmentLine(Matcher variableAssignmentMatcher) throws ParsingException {
-		String variableName = variableAssignmentMatcher.group(1);
-		Variable assignedVariable = globalScope.getVariable(variableName);
-		assignValue(variableAssignmentMatcher, assignedVariable);
-	}
-
-	private void parseVariableDeclarationLine(Matcher matcher) throws ParsingException {
-		boolean isFinal = isFinalVariable(matcher.group(1));
-		String variableType = matcher.group(2);
-		for (String section: matcher.group(3).split(",")) {
-			Matcher declarationOnlyMatcher = VARIABLE_DECLARATION.matcher(section);
+	private void parseFinalVariableDeclarationLine(Matcher matcher) throws ParsingException {
+		String variableType = matcher.group(1);
+		for (String section: matcher.group(2).split(",")) {
 			Matcher assignmentMatcher = VARIABLE_ASSIGNMENT.matcher(section);
-			if (declarationOnlyMatcher.matches()) {
-				String variableName = declarationOnlyMatcher.group(1);
-				globalScope.addVariable(variableName, new Variable(variableType, variableName, isFinal));
-			} else if (assignmentMatcher.matches()) {
+			if (assignmentMatcher.matches()) {
 				String variableName = assignmentMatcher.group(1);
-				Variable variable = new Variable(variableType, variableName, isFinal);
+				Variable variable = new Variable(variableType, variableName, true);
 				globalScope.addVariable(variableName, variable);
 				assignValue(assignmentMatcher, variable);
+			} else {
+				throw new IllegalLineException();
 			}
 		}
 	}
 
-	private boolean isFinalVariable(String answer) {
-		return (answer != null);
+	private void parseVariableAssignmentLine(Matcher matcher) throws ParsingException {
+		String variableName = matcher.group(1);
+		Variable assignedVariable = globalScope.getVariable(variableName);
+		assignValue(matcher, assignedVariable);
+	}
+
+	private void parseVariableDeclarationLine(Matcher matcher) throws ParsingException {
+		String variableType = matcher.group(1);
+		for (String section: matcher.group(2).split(",")) {
+			Matcher declarationOnlyMatcher = VARIABLE_DECLARATION.matcher(section);
+			Matcher assignmentMatcher = VARIABLE_ASSIGNMENT.matcher(section);
+			if (declarationOnlyMatcher.matches()) {
+				String variableName = declarationOnlyMatcher.group(1);
+				globalScope.addVariable(variableName, new Variable(variableType, variableName, false));
+			} else if (assignmentMatcher.matches()) {
+				String variableName = assignmentMatcher.group(1);
+				Variable variable = new Variable(variableType, variableName, false);
+				globalScope.addVariable(variableName, variable);
+				assignValue(assignmentMatcher, variable);
+			} else {
+				throw new IllegalLineException();
+			}
+		}
 	}
 
 	private void assignValue(Matcher assignmentMatcher, Variable variable) throws ParsingException {

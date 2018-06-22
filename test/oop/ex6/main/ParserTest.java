@@ -55,6 +55,11 @@ public class ParserTest {
         testFailing(new File("resources/assigning_final_variable.txt"));
     }
 
+    @Test(expected = IllegalLineException.class)
+    public void declaringFinalVariableWithoutInitializing() throws Exception {
+        testFailing(new File("resources/declaring_final_without_initializing.txt"));
+    }
+
     private void testPassing(File testFile) throws FileNotFoundException {
         Scanner scanner = new Scanner(testFile);
         Parser parseObj = new Parser(scanner);
