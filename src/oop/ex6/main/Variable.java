@@ -44,7 +44,6 @@ public class Variable {
 
 	private boolean isValueValid(String value) {
 		Pattern pattern = null;
-		Matcher matcher;
 		switch(type) {
 			case "int":
 				pattern = Pattern.compile("-?\\d+");
@@ -61,8 +60,11 @@ public class Variable {
 			case "boolean":
 				pattern = Pattern.compile("(-?(\\d+[.])?\\d+|true|false)");
 				break;
+			case "default":
+				pattern = Pattern.compile(".*");
+				break;
 		}
-		matcher = pattern.matcher(value);
+		Matcher matcher = pattern.matcher(value);
 		return matcher.matches();
 	}
 

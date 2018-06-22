@@ -80,6 +80,11 @@ public class ParserTest {
         testPassing("resources/declared_only_in_global.txt");
     }
 
+    @Test(expected = InvalidArgumentsNumber.class)
+    public void notEnoughArguments() throws Exception {
+        testFailing("resources/not_enough_arguments.txt");
+    }
+
     private void testPassing(String filePath) throws FileNotFoundException {
         Parser parseObj = new Parser();
         try {

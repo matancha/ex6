@@ -25,4 +25,13 @@ public class Method {
 
 		return matcher.matches();
 	}
+
+	public void call(List<String> inArguments) throws ParsingException {
+		if (inArguments.size() != arguments.size()) {
+			throw new InvalidArgumentsNumber();
+		}
+		for (int i=0;i<inArguments.size();i++) {
+			arguments.get(i).setValue(inArguments.get(i));
+		}
+	}
 }
