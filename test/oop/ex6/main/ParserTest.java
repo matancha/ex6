@@ -12,68 +12,71 @@ import java.util.Scanner;
 public class ParserTest {
     @Test
     public void emptyLinesFile() throws FileNotFoundException {
-        testPassing(new File("resources/empty_lines.txt"));
+        testPassing("resources/empty_lines.txt");
     }
 
     @Test
     public void commentsFile() throws FileNotFoundException {
-        testPassing(new File("resources/comments_only.txt"));
+        testPassing("resources/comments_only.txt");
     }
 
     @Test
     public void simpleInitialization() throws FileNotFoundException {
-        testPassing(new File("resources/simple_initialization.txt"));
+        testPassing("resources/simple_initialization.txt");
     }
 
     @Test
     public void doubleInitialization() throws FileNotFoundException {
-        testPassing(new File("resources/double_initialization.txt"));
+        testPassing("resources/double_initialization.txt");
     }
 
     @Test
     public void variableAssignment() throws FileNotFoundException {
-        testPassing(new File("resources/simple_assignment.txt"));
+        testPassing("resources/simple_assignment.txt");
     }
 
     @Test(expected = DoubleDeclarationException.class)
     public void initializingExistingVariable() throws Exception {
-        testFailing(new File("resources/initializing_initialized.txt"));
+        testFailing("resources/initializing_initialized.txt");
     }
 
     @Test
     public void assigningVariableToAnother() throws FileNotFoundException {
-        testPassing(new File("resources/assigning_variable_to_another.txt"));
+        testPassing("resources/assigning_variable_to_another.txt");
     }
 
     @Test(expected = UndeclaredVariableException.class)
     public void assigningUndeclaredVariable() throws Exception {
-        testFailing(new File("resources/assigning_undeclared_variable.txt"));
+        testFailing("resources/assigning_undeclared_variable.txt");
     }
 
     @Test(expected = FinalVariableAssignmentException.class)
     public void assigningFinalVariableAfterInitialized() throws Exception {
-        testFailing(new File("resources/assigning_final_variable.txt"));
+        testFailing("resources/assigning_final_variable.txt");
     }
 
     @Test(expected = IllegalLineException.class)
     public void declaringFinalVariableWithoutInitializing() throws Exception {
-        testFailing(new File("resources/declaring_final_without_initializing.txt"));
+        testFailing("resources/declaring_final_without_initializing.txt");
     }
 
-    private void testPassing(File testFile) throws FileNotFoundException {
-        Scanner scanner = new Scanner(testFile);
-        Parser parseObj = new Parser(scanner);
+    @Test
+    public void methodDeclaration() throws FileNotFoundException {
+        testPassing("resources/method_declaration.txt");
+    }
+
+    private void testPassing(String filePath) throws FileNotFoundException {
+        Parser parseObj = new Parser();
         try {
-            parseObj.parse();
+            parseObj.parse(filePath);
         } catch (ParsingException e) {
             System.err.println(parseObj.getLineNumber() + ": " + e.getMsg());
             fail();
         }
     }
 
-    private void testFailing(File testFile) throws FileNotFoundException, ParsingException {
-        Scanner scanner = new Scanner(testFile);
-        Parser parseObj = new Parser(scanner);
-        parseObj.parse();
+    private void testFailing(String filePath) throws FileNotFoundException, ParsingException {
+        Parser parseObj = new Parser();
+        parseObj.parse(filePath);
     }
 }

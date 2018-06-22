@@ -4,26 +4,46 @@ import java.util.*;
 
 public class Scope {
 	private HashMap<String, Variable> nameToVariable;
+	private HashMap<String, Method> nameToMethod;
 
 	public Scope() {
 		this.nameToVariable = new HashMap<String, Variable>();
+		this.nameToMethod = new HashMap<String, Method>();
 	}
 
 	public void addVariable(String variableName, Variable variableObj) throws DoubleDeclarationException {
-		if (isInScope(variableName)) {
+		if (isVariableInScope(variableName)) {
 			throw new DoubleDeclarationException();
 		}
 		nameToVariable.put(variableName, variableObj);
 	}
 
-	public boolean isInScope(String variableName) {
+	public void addMethod(String methodName, Method methodObj) throws DoubleDeclarationException {
+		if (isVariableInScope(methodName)) {
+			throw new DoubleDeclarationException();
+		}
+		nameToMethod.put(methodName, methodObj);
+	}
+
+	public boolean isVariableInScope(String variableName) {
 		return nameToVariable.containsKey(variableName);
 	}
 
+	public boolean isMethodInScope(String methodName) {
+		return nameToMethod.containsKey(methodName);
+	}
+
 	public Variable getVariable(String variableName) throws UndeclaredVariableException {
-		if (! isInScope(variableName)) {
+		if (! isVariableInScope(variableName)) {
 			throw new UndeclaredVariableException();
 		}
 		return nameToVariable.get(variableName);
+	}
+
+	public Method getMethod(String methodName) throws UndeclaredMethodException {
+		if (! isMethodInScope(methodName)) {
+			throw new UndeclaredMethodException();
+		}
+		return nameToMethod.get(methodName);
 	}
 }

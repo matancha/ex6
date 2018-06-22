@@ -2,18 +2,19 @@ package oop.ex6.main;
 import java.util.regex.*;
 
 public class Variable {
+	private static final String[] VARIABLE_TYPES = new String[]{"int", "double", "String", "char", "boolean"};
 	private String name;
 	private String type;
 	private String value;
 	private boolean isFinal;
 
 	public Variable(String type, String name, boolean isFinal) throws ParsingException {
+		if (! isNameValid(name)) {
+			throw new InvalidVariableNameException();
+		}
 		this.type = type;
 		this.name = name;
 		this.isFinal = isFinal;
-		if (! isNameValid(this.name)) {
-			throw new InvalidVariableNameException();
-		}
 	}
 
 	public static boolean isNameValid(String name) {
@@ -22,6 +23,10 @@ public class Variable {
 		Matcher matcher = pattern.matcher(name);
 
 		return matcher.matches();
+	}
+
+	public String getName(){
+		return this.name;
 	}
 
 	public String getValue() {
@@ -64,5 +69,9 @@ public class Variable {
 	public void copyVariableValue(Variable copiedVariable) throws ParsingException {
 		String copiedValue = copiedVariable.getValue();
 		setValue(copiedValue);
+	}
+
+	public static String getVariableTypesRegex() {
+		return String.join("|", VARIABLE_TYPES);
 	}
 }
