@@ -1,0 +1,9 @@
+void foo(String h) {
+  int a = 6;
+  return;
+}
+
+void boo(String c, int b) {
+  a = 5;
+  return;
+}

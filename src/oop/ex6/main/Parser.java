@@ -14,7 +14,7 @@ public class Parser {
 	private static final Pattern FINAL_VARIABLE_DECLARATION_LINE =
 			Pattern.compile("\\s*final\\s+(" + Variable.getVariableTypesRegex() + ")\\s+([^;]*);$");
 	private static final Pattern VARIABLE_ASSIGNMENT_LINE = Pattern.compile("^\\s*([^=\\s]+)\\s*=\\s*(\\S*)\\s*;$");
-	private static final Pattern METHOD_DECLARATION_LINE = Pattern.compile("void\\s+(\\S+)[(](.*)[)]\\s*\\{\\s*");
+	private static final Pattern METHOD_DECLARATION_LINE = Pattern.compile("void\\s+(\\S+)[(](.*)*?[)]\\s*[{]\\s*");
 	private static final Pattern METHOD_PARAMETER =
 			Pattern.compile("\\s*(final\\s+)?(" + Variable.getVariableTypesRegex() + ")\\s+(\\S+)");
 	private static final Pattern METHOD_BLOCK = Pattern.compile(" *void\\s[\\s\\S]+?(return;\\s*\\n}|\\n})");
@@ -30,6 +30,7 @@ public class Parser {
 	public Parser(){
 		this.lineNumber = 0;
 		this.globalScope = new Scope();
+		this.localScope = globalScope;
 		this.scopeStack = new Stack<Scope>();
 	}
 
@@ -44,7 +45,8 @@ public class Parser {
 
 	public void parse(String filePath) throws ParsingException, IOError, FileNotFoundException {
 		methodsParse(new Scanner(new File(filePath)).useDelimiter("\\A"));
-		mainParse(new Scanner(new File(filePath)));
+		mainParse(new Scanner(new File(filePath)), true);
+		mainParse(new Scanner(new File(filePath)), false);
 	}
 
 	private void methodsParse(Scanner scanObj) throws ParsingException, IOError {
@@ -66,7 +68,7 @@ public class Parser {
 		}
 	}
 
-	public void mainParse(Scanner scanObj) throws ParsingException, IOError {
+	public void mainParse(Scanner scanObj, boolean globals) throws ParsingException, IOError {
 		while (scanObj.hasNext()){
 			String line = getNextLine(scanObj);
 			Matcher variableDeclarationMatcher = VARIABLE_DECLARATION_LINE.matcher(line);
@@ -77,13 +79,16 @@ public class Parser {
 			Matcher blockSuffixMatcher = BLOCK_SUFFIX.matcher(line);
 
 			if (! isWhitespaceOnly(line) && ! isComment(line)) {
-				if (variableDeclarationMatcher.matches()) {
-					parseVariableDeclarationLine(variableDeclarationMatcher);
-				} else if (finalVariableDeclarationMatcher.matches()) {
-					parseFinalVariableDeclarationLine(finalVariableDeclarationMatcher);
-				} else if (variableAssignmentMatcher.matches()) {
-					parseVariableAssignmentLine(variableAssignmentMatcher);
-				} else if (methodDeclarationMatcher.matches()) {
+				if (globals && localScope == globalScope || ! globals && localScope != globalScope) {
+					if (variableDeclarationMatcher.matches()) {
+						parseVariableDeclarationLine(variableDeclarationMatcher);
+					} else if (finalVariableDeclarationMatcher.matches()) {
+						parseFinalVariableDeclarationLine(finalVariableDeclarationMatcher);
+					} else if (variableAssignmentMatcher.matches()) {
+						parseVariableAssignmentLine(variableAssignmentMatcher);
+					}
+				}
+				if (methodDeclarationMatcher.matches()) {
 					scopeStack.push(localScope);
 					localScope = new Scope();
 					String methodName = methodDeclarationMatcher.group(1);
@@ -91,8 +96,14 @@ public class Parser {
 						localScope.addVariable(variable.getName(), variable);
 					}
 				} else if (blockSuffixMatcher.matches()) {
-					localScope = scopeStack.pop();
-				} else if (returnLineMatcher.matches()) {
+					try {
+						localScope = scopeStack.pop();
+					} catch (EmptyStackException e) {
+						localScope = globalScope;
+					}
+				} else if (returnLineMatcher.matches() ||
+						variableDeclarationMatcher.matches() || finalVariableDeclarationMatcher.matches() ||
+						variableAssignmentMatcher.matches()) {
 				} else {
 					throw new IllegalLineException();
 				}
@@ -130,7 +141,7 @@ public class Parser {
 			if (assignmentMatcher.matches()) {
 				String variableName = assignmentMatcher.group(1);
 				Variable variable = new Variable(variableType, variableName, true);
-				globalScope.addVariable(variableName, variable);
+				localScope.addVariable(variableName, variable);
 				assignValue(assignmentMatcher, variable);
 			} else {
 				throw new IllegalLineException();
@@ -140,7 +151,12 @@ public class Parser {
 
 	private void parseVariableAssignmentLine(Matcher matcher) throws ParsingException {
 		String variableName = matcher.group(1);
-		Variable assignedVariable = globalScope.getVariable(variableName);
+		Variable assignedVariable;
+		try {
+			assignedVariable = localScope.getVariable(variableName);
+		} catch (UndeclaredVariableException e) {
+			assignedVariable = globalScope.getVariable(variableName);
+		}
 		assignValue(matcher, assignedVariable);
 	}
 
@@ -151,11 +167,11 @@ public class Parser {
 			Matcher assignmentMatcher = VARIABLE_ASSIGNMENT.matcher(section);
 			if (declarationOnlyMatcher.matches()) {
 				String variableName = declarationOnlyMatcher.group(1);
-				globalScope.addVariable(variableName, new Variable(variableType, variableName, false));
+				localScope.addVariable(variableName, new Variable(variableType, variableName, false));
 			} else if (assignmentMatcher.matches()) {
 				String variableName = assignmentMatcher.group(1);
 				Variable variable = new Variable(variableType, variableName, false);
-				globalScope.addVariable(variableName, variable);
+				localScope.addVariable(variableName, variable);
 				assignValue(assignmentMatcher, variable);
 			} else {
 				throw new IllegalLineException();
@@ -165,8 +181,13 @@ public class Parser {
 
 	private void assignValue(Matcher matcher, Variable variable) throws ParsingException {
 		if (Variable.isNameValid(matcher.group(2))) {
-			Variable assignedVariable = globalScope.getVariable(matcher.group(2));
-			variable.copyVariableValue(assignedVariable);
+			try {
+				Variable assignedVariable = localScope.getVariable(matcher.group(2));
+				variable.copyVariableValue(assignedVariable);
+			} catch (UndeclaredVariableException e) {
+				Variable assignedVariable = globalScope.getVariable(matcher.group(2));
+				variable.copyVariableValue(assignedVariable);
+			}
 		} else {
 			String variableValue = matcher.group(2);
 			variable.setValue(variableValue);

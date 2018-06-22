@@ -65,6 +65,21 @@ public class ParserTest {
         testPassing("resources/method_declaration.txt");
     }
 
+    @Test
+    public void referGlobalVariable() throws FileNotFoundException {
+        testPassing("resources/refer_global_variable.txt");
+    }
+
+    @Test(expected = UndeclaredVariableException.class)
+    public void undeclaredLocalScope() throws Exception {
+        testFailing("resources/undeclared_local_scope.txt");
+    }
+
+    @Test
+    public void declaredOnlyInGlobal() throws FileNotFoundException {
+        testPassing("resources/declared_only_in_global.txt");
+    }
+
     private void testPassing(String filePath) throws FileNotFoundException {
         Parser parseObj = new Parser();
         try {

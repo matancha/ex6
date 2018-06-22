@@ -1,0 +1,6 @@
+void foo(String b, int a) {
+   d = 5;
+   return;
+}
+
+int d;
