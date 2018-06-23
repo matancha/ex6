@@ -96,6 +96,46 @@ public class ParserTest {
         testFailing("resources/invalid_type_method.txt");
     }
 
+    @Test(expected = IllegalLineException.class)
+    public void methodCallInGlobalScope() throws Exception {
+        testFailing("resources/method_call_global_scope.txt");
+    }
+
+    @Test
+    public void ifWhileBlock() throws FileNotFoundException {
+        testPassing("resources/if_while_block.txt");
+    }
+
+    @Test(expected = InvalidValueException.class)
+    public void whileBlockGivenIllegalArgument() throws Exception {
+        testFailing("resources/illegal_value_block.txt");
+    }
+
+    @Test
+    public void firstSchoolTest() throws FileNotFoundException {
+    	testPassing("resources/ex6files/501.txt");
+    }
+
+	@Test(expected = IllegalLineException.class)
+	public void secondSchoolTest() throws Exception {
+		testFailing("resources/ex6files/502.txt");
+	}
+
+	@Test(expected = IllegalLineException.class)
+	public void thirdSchoolTest() throws Exception {
+    	testFailing("resources/ex6files/503.txt");
+	}
+
+	@Test(expected = InvalidValueException.class)
+	public void fourthSchoolTest() throws Exception {
+    	testFailing("resources/ex6files/504.txt");
+	}
+
+	@Test
+	public void fifthSchoolTest() throws FileNotFoundException {
+    	testPassing("resources/ex6files/505.txt");
+	}
+
     private void testPassing(String filePath) throws FileNotFoundException {
         Parser parseObj = new Parser();
         try {

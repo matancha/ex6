@@ -1,8 +1,12 @@
 package oop.ex6.main;
+import java.util.*;
 import java.util.regex.*;
 
 public class Variable {
 	private static final String[] VARIABLE_TYPES = new String[]{"int", "double", "String", "char", "boolean"};
+	private static final List<String> ILLEGAL_VARIABLE_NAMES = new ArrayList<String>(
+			Arrays.asList("int", "double", "boolean", "char", "String", "void", "final", "if", "while", "true",
+					"false", "return"));
 	private String name;
 	private String type;
 	private String value;
@@ -18,6 +22,9 @@ public class Variable {
 	}
 
 	public static boolean isNameValid(String name) {
+		if (ILLEGAL_VARIABLE_NAMES.contains(name)) {
+			return false;
+		}
 		String variableNamePattern = "([a-zA-Z]|[_][\\w])[\\w]*";
 		Pattern pattern = Pattern.compile(variableNamePattern);
 		Matcher matcher = pattern.matcher(name);
@@ -36,7 +43,7 @@ public class Variable {
 	public void setValue(String value) throws ParsingException {
 		if (! isValueValid(value)) {
 			throw new InvalidValueException();
-		} else if (isFinal && value != null) {
+		} else if (isFinal && this.value != null) {
 			throw new FinalVariableAssignmentException();
 		}
 		this.value = value;
