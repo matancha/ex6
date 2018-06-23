@@ -98,6 +98,7 @@ public class Parser {
 					String methodName = methodDeclarationMatcher.group(1);
 					for (Variable variable: globalScope.getMethod(methodName).getArguments()) {
 						localScope.addVariable(variable.getName(), variable);
+						variable.setDefaultValue();
 					}
 				} else if (blockSuffixMatcher.matches()) {
 					try {

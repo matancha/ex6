@@ -4,6 +4,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import org.junit.Test;
+import sun.reflect.annotation.ExceptionProxy;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -83,6 +84,16 @@ public class ParserTest {
     @Test(expected = InvalidArgumentsNumber.class)
     public void notEnoughArguments() throws Exception {
         testFailing("resources/not_enough_arguments.txt");
+    }
+
+    @Test(expected = UndeclaredVariableException.class)
+    public void undeclaredVariableSuppliedToMethod() throws Exception {
+        testFailing("resources/undeclared_variable_method.txt");
+    }
+
+    @Test(expected = InvalidValueException.class)
+    public void invalidValueSuppliedToMethod() throws Exception {
+        testFailing("resources/invalid_type_method.txt");
     }
 
     private void testPassing(String filePath) throws FileNotFoundException {

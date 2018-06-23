@@ -1,0 +1,8 @@
+void boo(String a, int b) {
+  foo(a, "c");
+  return;
+}
+
+void foo(String c, int d) {
+  return;
+}

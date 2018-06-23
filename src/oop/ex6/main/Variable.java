@@ -42,8 +42,8 @@ public class Variable {
 		this.value = value;
 	}
 
-	private boolean isValueValid(String value) {
-		Pattern pattern = null;
+	private boolean isValueValid(String value) throws InvalidValueException {
+		Pattern pattern;
 		switch(type) {
 			case "int":
 				pattern = Pattern.compile("-?\\d+");
@@ -52,17 +52,16 @@ public class Variable {
 				pattern = Pattern.compile("-?(\\d+[.])?\\d+");
 				break;
 			case "String":
-				pattern = Pattern.compile("\"\\S+\"");
+				pattern = Pattern.compile("\"(\\S)*\"");
 				break;
 			case "char":
-				pattern = Pattern.compile("'\\S+'");
+				pattern = Pattern.compile("'(\\S)*'");
 				break;
 			case "boolean":
 				pattern = Pattern.compile("(-?(\\d+[.])?\\d+|true|false)");
 				break;
-			case "default":
-				pattern = Pattern.compile(".*");
-				break;
+			default:
+				throw new InvalidValueException();
 		}
 		Matcher matcher = pattern.matcher(value);
 		return matcher.matches();
@@ -75,5 +74,27 @@ public class Variable {
 
 	public static String getVariableTypesRegex() {
 		return String.join("|", VARIABLE_TYPES);
+	}
+
+	public void setDefaultValue() throws ParsingException {
+		switch(type) {
+			case "int":
+				setValue("0");
+				break;
+			case "double":
+				setValue("0.0");
+				break;
+			case "String":
+				setValue("\"\"");
+				break;
+			case "char":
+				setValue("''");
+				break;
+			case "boolean":
+				setValue("true");
+				break;
+			default:
+				throw new InvalidValueException();
+		}
 	}
 }
