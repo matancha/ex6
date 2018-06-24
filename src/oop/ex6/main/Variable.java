@@ -21,7 +21,7 @@ public class Variable {
 		this.isFinal = isFinal;
 	}
 
-	public Variable(Variable copiedVariable) throws ParsingException {
+	public Variable(Variable copiedVariable) {
 		this.type = copiedVariable.getType();
 		this.name = copiedVariable.getName();
 		this.isFinal = copiedVariable.getIsFinal();
@@ -77,7 +77,7 @@ public class Variable {
 				pattern = Pattern.compile("\"(\\S)*\"");
 				break;
 			case "char":
-				pattern = Pattern.compile("'(\\S)*'");
+				pattern = Pattern.compile("'(\\S)?'");
 				break;
 			case "boolean":
 				pattern = Pattern.compile("(-?(\\d+[.])?\\d+|true|false)");
@@ -91,6 +91,9 @@ public class Variable {
 
 	public void copyVariableValue(Variable copiedVariable) throws ParsingException {
 		String copiedValue = copiedVariable.getValue();
+		if (copiedValue == null) {
+			throw new UninitializedVariableException();
+		}
 		setValue(copiedValue);
 	}
 

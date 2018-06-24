@@ -10,16 +10,15 @@ public class Parser {
 	private static final Pattern COMMENT_LINE = Pattern.compile("^[\\/][\\/]");
 	private static final Pattern WHITESPACE_LINE = Pattern.compile("\\s*");
 	private static final Pattern VARIABLE_DECLARATION_LINE =
-			Pattern.compile("\\s*(" + Variable.getVariableTypesRegex() + ")\\s+([^;]*);$");
+			Pattern.compile("\\s*(" + Variable.getVariableTypesRegex() + ")\\s+([^;]*);\\s*");
 	private static final Pattern FINAL_VARIABLE_DECLARATION_LINE =
-			Pattern.compile("\\s*final\\s+(" + Variable.getVariableTypesRegex() + ")\\s+([^;]*);$");
-	private static final Pattern VARIABLE_ASSIGNMENT_LINE = Pattern.compile("^\\s*([^=\\s]+)\\s*=\\s*(\\S*)\\s*;$");
+			Pattern.compile("\\s*final\\s+(" + Variable.getVariableTypesRegex() + ")\\s+([^;]*);\\s*");
+	private static final Pattern VARIABLE_ASSIGNMENT_LINE = Pattern.compile("^\\s*([^=\\s]+)\\s*=\\s*(\\S*)\\s*;\\s*");
 	private static final Pattern METHOD_DECLARATION_LINE = Pattern.compile("void\\s+(\\S+)[(](.*)*?[)]\\s*[{]\\s*");
 	private static final Pattern METHOD_PARAMETER =
 			Pattern.compile("\\s*(final\\s+)?(" + Variable.getVariableTypesRegex() + ")\\s+(\\S+)");
-	private static final Pattern METHOD_BLOCK = Pattern.compile(" *void\\s[\\s\\S]+?(return;\\s*\\n}|\\n})");
 	private static final Pattern RETURN_LINE = Pattern.compile("\\s*return;\\s*");
-	private static final Pattern METHOD_CALL_LINE = Pattern.compile("\\s*(\\S*)[(](.*)*?[)];\\s*");
+	private static final Pattern METHOD_CALL_LINE = Pattern.compile("\\s*(\\S*)\\s*[(](.*)*?[)];\\s*");
 	private static final Pattern BLOCK_SUFFIX_LINE = Pattern.compile("\\s*[}]\\s*");
 	private static final Pattern IF_WHILE_LINE =
 			Pattern.compile("\\s*(if|while)\\s*[(](\\S+\\s*((\\|\\||&&)\\s*\\S+\\s*)*)[)]\\s*[{]\\s*");
@@ -253,14 +252,14 @@ public class Parser {
 		for (String section: matcher.group(2).split(DELIMITER)) {
 			Matcher declarationOnlyMatcher = SINGLE_VALUE.matcher(section);
 			Matcher assignmentMatcher = VARIABLE_ASSIGNMENT.matcher(section);
-			if (declarationOnlyMatcher.matches()) {
-				String variableName = declarationOnlyMatcher.group(1);
-				localScope.addVariable(variableName, new Variable(variableType, variableName, false));
-			} else if (assignmentMatcher.matches()) {
+			if (assignmentMatcher.matches()) {
 				String variableName = assignmentMatcher.group(1);
 				Variable variable = new Variable(variableType, variableName, false);
 				localScope.addVariable(variableName, variable);
 				assignValue(assignmentMatcher, variable);
+			} else if (declarationOnlyMatcher.matches()) {
+				String variableName = declarationOnlyMatcher.group(1);
+				localScope.addVariable(variableName, new Variable(variableType, variableName, false));
 			} else {
 				throw new IllegalLineException();
 			}

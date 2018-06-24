@@ -161,6 +161,31 @@ public class ParserTest {
         testPassing("resources/suffix_no_indentation.txt");
     }
 
+    @Test
+    public void fifthTeenth() throws FileNotFoundException {
+        testPassing("resources/SchoolSolution/test015.sjava");
+    }
+
+    @Test(expected = UninitializedVariableException.class)
+    public void fourtySix() throws Exception {
+        testFailing("resources/SchoolSolution/test046.sjava");
+    }
+
+    @Test(expected = UninitializedVariableException.class)
+    public void fiftyFour() throws Exception {
+        testFailing("resources/SchoolSolution/test054.sjava");
+    }
+
+    @Test
+    public void fourHundredAndTwelve() throws FileNotFoundException {
+        testPassing("resources/SchoolSolution/test412.sjava");
+    }
+
+    @Test
+    public void fourHundredTwentySeven() throws FileNotFoundException {
+        testPassing("resources/SchoolSolution/test427.sjava");
+    }
+
     private void testPassing(String filePath) throws FileNotFoundException {
         Parser parseObj = new Parser();
         try {
