@@ -6,7 +6,8 @@ import java.util.regex.*;
 
 public class Parser {
 	private static final Pattern SINGLE_VALUE = Pattern.compile("\\s*(\\S+)\\s*");
-	private static final Pattern VARIABLE_ASSIGNMENT = Pattern.compile("\\s*([^=\\s]+)\\s*=\\s*(\\S*)\\s*");
+	private static final Pattern VARIABLE_ASSIGNMENT =
+			Pattern.compile("\\s*([^=\\s]+)\\s*=\\s*((\\'.*\\'|\\\".*\\\"|\\S*))\\s*");
 	private static final Pattern COMMENT_LINE = Pattern.compile("^[\\/][\\/]");
 	private static final Pattern WHITESPACE_LINE = Pattern.compile("\\s*");
 	private static final Pattern VARIABLE_DECLARATION_LINE =
@@ -14,14 +15,15 @@ public class Parser {
 	private static final Pattern FINAL_VARIABLE_DECLARATION_LINE =
 			Pattern.compile("\\s*final\\s+(" + Variable.getVariableTypesRegex() + ")\\s+([^;]*);\\s*");
 	private static final Pattern VARIABLE_ASSIGNMENT_LINE = Pattern.compile("^\\s*([^=\\s]+)\\s*=\\s*(\\S*)\\s*;\\s*");
-	private static final Pattern METHOD_DECLARATION_LINE = Pattern.compile("void\\s+(\\S+)[(](.*)*?[)]\\s*[{]\\s*");
+	private static final Pattern METHOD_DECLARATION_LINE =
+			Pattern.compile("\\s*void\\s+(\\S+)\\s*[(](.*)?[)]\\s*[{]\\s*");
 	private static final Pattern METHOD_PARAMETER =
-			Pattern.compile("\\s*(final\\s+)?(" + Variable.getVariableTypesRegex() + ")\\s+(\\S+)");
-	private static final Pattern RETURN_LINE = Pattern.compile("\\s*return;\\s*");
-	private static final Pattern METHOD_CALL_LINE = Pattern.compile("\\s*(\\S*)\\s*[(](.*)*?[)];\\s*");
+			Pattern.compile("\\s*(final\\s+)?(" + Variable.getVariableTypesRegex() + ")\\s+(\\S+)\\s*");
+	private static final Pattern RETURN_LINE = Pattern.compile("\\s*return\\s*;\\s*");
+	private static final Pattern METHOD_CALL_LINE = Pattern.compile("\\s*(\\S*)\\s*[(](.*)?[)];\\s*");
 	private static final Pattern BLOCK_SUFFIX_LINE = Pattern.compile("\\s*[}]\\s*");
 	private static final Pattern IF_WHILE_LINE =
-			Pattern.compile("\\s*(if|while)\\s*[(](\\S+\\s*((\\|\\||&&)\\s*\\S+\\s*)*)[)]\\s*[{]\\s*");
+			Pattern.compile("\\s*(if|while)\\s*[(](\\s*\\S+\\s*((\\|\\||&&)\\s*\\S+\\s*)*)[)]\\s*[{]\\s*");
 	private static final String DELIMITER = ",";
 
 	private int lineNumber;
@@ -135,7 +137,7 @@ public class Parser {
 					} catch (EmptyStackException e) {
 						localScope = globalScope;
 					}
-				} else if (returnLineMatcher.matches() ||
+				} else if (returnLineMatcher.matches() && localScope != globalScope ||
 						variableDeclarationMatcher.matches() || finalVariableDeclarationMatcher.matches() ||
 						variableAssignmentMatcher.matches() ||
 						methodCallMatcher.matches() && localScope != globalScope ||
@@ -179,13 +181,14 @@ public class Parser {
 		List<String> methodArguments = new ArrayList<String>();
 		String methodName = matcher.group(1);
 		String arguments = matcher.group(2);
-		if (arguments != null) {
+		if (! arguments.matches("\\s*")) {
 			for (String argument: arguments.split(DELIMITER)) {
 				Matcher argumentMatcher = SINGLE_VALUE.matcher(argument);
 				if (argumentMatcher.matches()) {
 					String variableString = argumentMatcher.group(1);
 					if (Variable.isNameValid(variableString)) {
-						Variable variable = getMostSpecificVariable(variableString, (Stack<Scope>)scopeStack.clone());
+						Variable variable = getMostSpecificVariable(variableString,
+								(Stack<Scope>)scopeStack.clone());
 						if (variable.getValue() != null) {
 							methodArguments.add(variable.getValue());
 						} else {
@@ -206,7 +209,7 @@ public class Parser {
 		List<Variable> methodParameters = new ArrayList<Variable>();
 		String methodName = matcher.group(1);
 		String parameters = matcher.group(2);
-		if (parameters != null) {
+		if (! parameters.matches("\\s*")) {
 			for (String parameter: parameters.split(DELIMITER)) {
 				Matcher parameterMatcher = METHOD_PARAMETER.matcher(parameter);
 				if (parameterMatcher.matches()) {
@@ -249,6 +252,9 @@ public class Parser {
 
 	private void parseVariableDeclarationLine(Matcher matcher) throws ParsingException {
 		String variableType = matcher.group(1);
+		if (matcher.group(2).startsWith(DELIMITER) || matcher.group(2).endsWith(DELIMITER)) {
+			throw new IllegalLineException();
+		}
 		for (String section: matcher.group(2).split(DELIMITER)) {
 			Matcher declarationOnlyMatcher = SINGLE_VALUE.matcher(section);
 			Matcher assignmentMatcher = VARIABLE_ASSIGNMENT.matcher(section);

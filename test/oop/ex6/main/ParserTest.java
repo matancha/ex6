@@ -186,6 +186,36 @@ public class ParserTest {
         testPassing("resources/SchoolSolution/test427.sjava");
     }
 
+    @Test
+    public void ten() throws FileNotFoundException {
+        testPassing("resources/SchoolSolution/10.sjava");
+    }
+
+    @Test
+    public void FourHundredAndEighteen() throws FileNotFoundException {
+        testPassing("resources/SchoolSolution/test418.sjava");
+    }
+
+    @Test
+    public void FourHundredAndSeventySeven() throws FileNotFoundException {
+        testPassing("resources/SchoolSolution/test477.sjava");
+    }
+
+    @Test
+    public void barakNineteen() throws FileNotFoundException {
+    	testPassing("resources/barak/19.sjava");
+    }
+
+    @Test
+    public void barakThirty() throws FileNotFoundException {
+	    testPassing("resources/barak/30.sjava");
+    }
+
+    @Test(expected = IllegalLineException.class)
+    public void barakFiftySeven() throws Exception {
+	    testFailing("resources/barak/57.sjava");
+    }
+
     private void testPassing(String filePath) throws FileNotFoundException {
         Parser parseObj = new Parser();
         try {

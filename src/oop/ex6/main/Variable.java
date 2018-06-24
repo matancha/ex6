@@ -74,10 +74,10 @@ public class Variable {
 				pattern = Pattern.compile("-?(\\d+[.])?\\d+");
 				break;
 			case "String":
-				pattern = Pattern.compile("\"(\\S)*\"");
+				pattern = Pattern.compile("\"[\\s\\S]*\"");
 				break;
 			case "char":
-				pattern = Pattern.compile("'(\\S)?'");
+				pattern = Pattern.compile("'\\S?'");
 				break;
 			case "boolean":
 				pattern = Pattern.compile("(-?(\\d+[.])?\\d+|true|false)");
