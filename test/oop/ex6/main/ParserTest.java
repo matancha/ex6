@@ -156,6 +156,11 @@ public class ParserTest {
         testFailing("resources/method_not_affects_global.txt");
     }
 
+    @Test
+    public void suffixWithoutIndentationDoesNotConcludeMethod() throws FileNotFoundException {
+        testPassing("resources/suffix_no_indentation.txt");
+    }
+
     private void testPassing(String filePath) throws FileNotFoundException {
         Parser parseObj = new Parser();
         try {

@@ -1,0 +1,5 @@
+void boo() {
+  if (true) {
+}
+  return;
+}

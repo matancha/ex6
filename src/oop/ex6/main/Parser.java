@@ -22,7 +22,7 @@ public class Parser {
 	private static final Pattern METHOD_CALL_LINE = Pattern.compile("\\s*(\\S*)[(](.*)*?[)];\\s*");
 	private static final Pattern BLOCK_SUFFIX_LINE = Pattern.compile("\\s*[}]\\s*");
 	private static final Pattern IF_WHILE_LINE =
-			Pattern.compile("\\s*(if|while)\\s*[(](\\S+\\s*(\\|\\||&&\\s*\\S+)*)[)]\\s*[{]\\s*");
+			Pattern.compile("\\s*(if|while)\\s*[(](\\S+\\s*((\\|\\||&&)\\s*\\S+\\s*)*)[)]\\s*[{]\\s*");
 	private static final String DELIMITER = ",";
 
 	private int lineNumber;
@@ -47,26 +47,49 @@ public class Parser {
 	}
 
 	public void parse(String filePath) throws ParsingException, IOError, FileNotFoundException {
-		methodsParse(new Scanner(new File(filePath)).useDelimiter("\\A"));
+		methodsParse(new Scanner(new File(filePath)));
+		this.scopeStack = new Stack<Scope>();
 		mainParse(new Scanner(new File(filePath)), true);
 		mainParse(new Scanner(new File(filePath)), false);
 	}
 
 	private void methodsParse(Scanner scanObj) throws ParsingException, IOError {
-		String fileChar = scanObj.next();
-		Matcher methodBlockMatcher = METHOD_BLOCK.matcher(fileChar);
+		int lastReturn = 0;
+		lineNumber = 0;
+		while (scanObj.hasNext()) {
+			String line = getNextLine(scanObj);
+			Matcher variableDeclarationMatcher = VARIABLE_DECLARATION_LINE.matcher(line);
+			Matcher variableAssignmentMatcher = VARIABLE_ASSIGNMENT_LINE.matcher(line);
+			Matcher finalVariableDeclarationMatcher = FINAL_VARIABLE_DECLARATION_LINE.matcher(line);
+			Matcher methodDeclarationMatcher = METHOD_DECLARATION_LINE.matcher(line);
+			Matcher returnLineMatcher = RETURN_LINE.matcher(line);
+			Matcher blockSuffixMatcher = BLOCK_SUFFIX_LINE.matcher(line);
+			Matcher methodCallMatcher = METHOD_CALL_LINE.matcher(line);
+			Matcher ifWhileMatcher = IF_WHILE_LINE.matcher(line);
 
-		while (methodBlockMatcher.find()) {
-			if (methodBlockMatcher.group(1).startsWith("return")) {
-				Matcher methodDeclarationMatcher =
-						METHOD_DECLARATION_LINE.matcher(methodBlockMatcher.group().split("\\n")[0]);
-				if (methodDeclarationMatcher.matches()) {
+			if (isWhitespaceOnly(line) || isComment(line) || variableDeclarationMatcher.matches() ||
+					finalVariableDeclarationMatcher.matches() ||
+					variableAssignmentMatcher.matches() || methodCallMatcher.matches()) {
+			} else if (methodDeclarationMatcher.matches()) {
+				if (localScope == globalScope) {
 					parseMethodDeclarationLine(methodDeclarationMatcher);
-				} else {
-					throw new IllegalLineException();
 				}
+				createNewScope();
+			} else if (ifWhileMatcher.matches()) {
+				createNewScope();
+			} else if (blockSuffixMatcher.matches()) {
+				if (localScope != globalScope) {
+					localScope = scopeStack.pop();
+					if (localScope == globalScope) {
+						if (lastReturn != lineNumber - 1) {
+							throw new MissingReturnException();
+						}
+					}
+				}
+			} else if (returnLineMatcher.matches()) {
+				lastReturn = lineNumber;
 			} else {
-				throw new MissingReturnException();
+				throw new IllegalLineException();
 			}
 		}
 	}
@@ -99,16 +122,14 @@ public class Parser {
 					}
 				}
 				if (methodDeclarationMatcher.matches()) {
-					scopeStack.push(localScope);
-					localScope = new Scope();
+					createNewScope();
 					String methodName = methodDeclarationMatcher.group(1);
 					for (Variable variable: globalScope.getMethod(methodName).getArguments()) {
 						localScope.addVariable(variable.getName(), variable);
 						variable.setDefaultValue();
 					}
 				} else if (ifWhileMatcher.matches()) {
-					scopeStack.push(localScope);
-					localScope = new Scope();
+					createNewScope();
 				} else if (blockSuffixMatcher.matches()) {
 					try {
 						localScope = scopeStack.pop();
@@ -127,6 +148,11 @@ public class Parser {
 		}
 	}
 
+	private void createNewScope() {
+		scopeStack.push(localScope);
+		localScope = new Scope();
+	}
+
 	private void parseIfWhile(Matcher matcher) throws ParsingException {
 		String conditionString = matcher.group(2);
 		for (String condition: conditionString.split("\\|\\||&&")) {
@@ -135,7 +161,7 @@ public class Parser {
 				String result = conditionMatcher.group(1);
 				Variable boolVariable = new Variable("boolean", "test", false);
 				if (Variable.isNameValid(result)) {
-					Variable variable = getMostSpecificVariable(result);
+					Variable variable = getMostSpecificVariable(result, (Stack<Scope>)scopeStack.clone());
 					if (variable.getValue() != null) {
 						boolVariable.setValue(variable.getValue());
 					} else {
@@ -160,7 +186,7 @@ public class Parser {
 				if (argumentMatcher.matches()) {
 					String variableString = argumentMatcher.group(1);
 					if (Variable.isNameValid(variableString)) {
-						Variable variable = getMostSpecificVariable(variableString);
+						Variable variable = getMostSpecificVariable(variableString, (Stack<Scope>)scopeStack.clone());
 						if (variable.getValue() != null) {
 							methodArguments.add(variable.getValue());
 						} else {
@@ -218,7 +244,7 @@ public class Parser {
 	private void parseVariableAssignmentLine(Matcher matcher) throws ParsingException {
 		String variableName = matcher.group(1);
 		Variable assignedVariable;
-		assignedVariable = getMostSpecificVariable(variableName);
+		assignedVariable = getMostSpecificVariable(variableName, (Stack<Scope>)scopeStack.clone());
 		assignValue(matcher, assignedVariable);
 	}
 
@@ -244,7 +270,7 @@ public class Parser {
 	private void assignValue(Matcher matcher, Variable variable) throws ParsingException {
 		if (Variable.isNameValid(matcher.group(2))) {
 			String variableString = matcher.group(2);
-			Variable assignedVariable = getMostSpecificVariable(variableString);
+			Variable assignedVariable = getMostSpecificVariable(variableString, (Stack<Scope>)scopeStack.clone());
 			variable.copyVariableValue(assignedVariable);
 		} else {
 			String variableValue = matcher.group(2);
@@ -252,12 +278,14 @@ public class Parser {
 		}
 	}
 
-	private Variable getMostSpecificVariable(String variableString) throws ParsingException {
+	private Variable getMostSpecificVariable(String variableString, Stack<Scope> scopeStack) throws ParsingException {
 		if (localScope.getVariable(variableString) != null) {
 			return localScope.getVariable(variableString);
 		}
 
-		for (Scope scope: scopeStack) {
+		int stackSize = scopeStack.size();
+		for (int i=0; i<stackSize; i++) {
+			Scope scope = scopeStack.pop();
 			Variable variable = scope.getVariable(variableString);
 			if (variable != null) {
 				if (scope != globalScope) {
@@ -269,6 +297,19 @@ public class Parser {
 				}
 			}
 		}
+
+		/*for (Scope scope: scopeStack) {
+			Variable variable = scope.getVariable(variableString);
+			if (variable != null) {
+				if (scope != globalScope) {
+					return variable;
+				} else {
+					Variable copyVariable = new Variable(variable);
+					localScope.addVariable(variable.getName(), copyVariable);
+					return copyVariable;
+				}
+			}
+		}*/
 		throw new UndeclaredVariableException();
 	}
 
