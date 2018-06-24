@@ -1,0 +1,5 @@
+void boo(String a) {
+  String b;
+  boo(b);
+  return;
+}

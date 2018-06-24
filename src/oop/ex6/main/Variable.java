@@ -21,6 +21,21 @@ public class Variable {
 		this.isFinal = isFinal;
 	}
 
+	public Variable(Variable copiedVariable) throws ParsingException {
+		this.type = copiedVariable.getType();
+		this.name = copiedVariable.getName();
+		this.isFinal = copiedVariable.getIsFinal();
+		this.value = copiedVariable.getValue();
+	}
+
+	public String getType() {
+		return type;
+	}
+
+	public boolean getIsFinal() {
+		return isFinal;
+	}
+
 	public static boolean isNameValid(String name) {
 		if (ILLEGAL_VARIABLE_NAMES.contains(name)) {
 			return false;

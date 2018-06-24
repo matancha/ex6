@@ -135,7 +135,12 @@ public class Parser {
 				String result = conditionMatcher.group(1);
 				Variable boolVariable = new Variable("boolean", "test", false);
 				if (Variable.isNameValid(result)) {
-					boolVariable.setValue(getVariable(result).getValue());
+					Variable variable = getMostSpecificVariable(result);
+					if (variable.getValue() != null) {
+						boolVariable.setValue(variable.getValue());
+					} else {
+						throw new UninitializedVariableException();
+					}
 				} else {
 					boolVariable.setValue(result);
 				}
@@ -155,7 +160,12 @@ public class Parser {
 				if (argumentMatcher.matches()) {
 					String variableString = argumentMatcher.group(1);
 					if (Variable.isNameValid(variableString)) {
-						methodArguments.add(getVariable(variableString).getValue());
+						Variable variable = getMostSpecificVariable(variableString);
+						if (variable.getValue() != null) {
+							methodArguments.add(variable.getValue());
+						} else {
+							throw new UninitializedVariableException();
+						}
 					} else {
 						methodArguments.add(variableString);
 					}
@@ -208,7 +218,7 @@ public class Parser {
 	private void parseVariableAssignmentLine(Matcher matcher) throws ParsingException {
 		String variableName = matcher.group(1);
 		Variable assignedVariable;
-		assignedVariable = getVariable(variableName);
+		assignedVariable = getMostSpecificVariable(variableName);
 		assignValue(matcher, assignedVariable);
 	}
 
@@ -234,7 +244,7 @@ public class Parser {
 	private void assignValue(Matcher matcher, Variable variable) throws ParsingException {
 		if (Variable.isNameValid(matcher.group(2))) {
 			String variableString = matcher.group(2);
-			Variable assignedVariable = getVariable(variableString);
+			Variable assignedVariable = getMostSpecificVariable(variableString);
 			variable.copyVariableValue(assignedVariable);
 		} else {
 			String variableValue = matcher.group(2);
@@ -242,14 +252,24 @@ public class Parser {
 		}
 	}
 
-	private Variable getVariable(String variableString) throws UndeclaredVariableException {
-		Variable variable;
-		try {
-			variable = localScope.getVariable(variableString);
-		} catch (UndeclaredVariableException e) {
-			variable = globalScope.getVariable(variableString);
+	private Variable getMostSpecificVariable(String variableString) throws ParsingException {
+		if (localScope.getVariable(variableString) != null) {
+			return localScope.getVariable(variableString);
 		}
-		return variable;
+
+		for (Scope scope: scopeStack) {
+			Variable variable = scope.getVariable(variableString);
+			if (variable != null) {
+				if (scope != globalScope) {
+					return variable;
+				} else {
+					Variable copyVariable = new Variable(variable);
+					localScope.addVariable(variable.getName(), copyVariable);
+					return copyVariable;
+				}
+			}
+		}
+		throw new UndeclaredVariableException();
 	}
 
 	private static boolean isComment(String line) {

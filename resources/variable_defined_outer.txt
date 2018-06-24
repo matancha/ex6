@@ -1,0 +1,7 @@
+void foo() {
+  int a;
+  while (true) {
+    a = 3;
+  }
+  return;
+}

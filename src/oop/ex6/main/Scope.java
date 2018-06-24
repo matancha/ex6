@@ -33,11 +33,11 @@ public class Scope {
 		return nameToMethod.containsKey(methodName);
 	}
 
-	public Variable getVariable(String variableName) throws UndeclaredVariableException {
-		if (! isVariableInScope(variableName)) {
-			throw new UndeclaredVariableException();
+	public Variable getVariable(String variableName) {
+		if (isVariableInScope(variableName)) {
+			return nameToVariable.get(variableName);
 		}
-		return nameToVariable.get(variableName);
+		return null;
 	}
 
 	public Method getMethod(String methodName) throws UndeclaredMethodException {

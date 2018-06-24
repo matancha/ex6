@@ -136,6 +136,26 @@ public class ParserTest {
     	testPassing("resources/ex6files/505.txt");
 	}
 
+	@Test(expected = UninitializedVariableException.class)
+    public void callingMethodWithUninitialized() throws Exception {
+        testFailing("resources/calling_method_uninitialized.txt");
+    }
+
+	@Test
+    public void variableInOuterScope() throws FileNotFoundException {
+        testPassing("resources/variable_defined_outer.txt");
+    }
+
+    @Test
+    public void innerAffectsOuter() throws FileNotFoundException {
+        testPassing("resources/inner_affects_outer.txt");
+    }
+
+    @Test(expected = UninitializedVariableException.class)
+    public void methodInnerNotAffectsGlobal() throws Exception {
+        testFailing("resources/method_not_affects_global.txt");
+    }
+
     private void testPassing(String filePath) throws FileNotFoundException {
         Parser parseObj = new Parser();
         try {

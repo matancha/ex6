@@ -1,0 +1,8 @@
+void boo(int num) {
+  int b;
+  if (true) {
+    b = 5;
+  }
+  boo(b);
+  return;
+}
