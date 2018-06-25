@@ -71,20 +71,16 @@ public class Parser {
 			if (isWhitespaceOnly(line) || isComment(line) || variableDeclarationMatcher.matches() ||
 					finalVariableDeclarationMatcher.matches() ||
 					variableAssignmentMatcher.matches() || methodCallMatcher.matches()) {
-			} else if (methodDeclarationMatcher.matches()) {
-				if (localScope == globalScope) {
-					parseMethodDeclarationLine(methodDeclarationMatcher);
-				}
+			} else if (methodDeclarationMatcher.matches() && localScope == globalScope) {
+				parseMethodDeclarationLine(methodDeclarationMatcher);
 				createNewScope();
 			} else if (ifWhileMatcher.matches()) {
 				createNewScope();
-			} else if (blockSuffixMatcher.matches()) {
-				if (localScope != globalScope) {
-					localScope = scopeStack.pop();
-					if (localScope == globalScope) {
-						if (lastReturn != lineNumber - 1) {
-							throw new MissingReturnException();
-						}
+			} else if (blockSuffixMatcher.matches() && localScope != globalScope) {
+				localScope = scopeStack.pop();
+				if (localScope == globalScope) {
+					if (lastReturn != lineNumber - 1) {
+						throw new MissingReturnException();
 					}
 				}
 			} else if (returnLineMatcher.matches()) {
@@ -149,32 +145,99 @@ public class Parser {
 		}
 	}
 
+	private static boolean isComment(String line) {
+		Matcher matcher = COMMENT_LINE.matcher(line);
+
+		return matcher.find();
+	}
+
+	private static boolean isWhitespaceOnly(String line) {
+		Matcher matcher = WHITESPACE_LINE.matcher(line);
+
+		return matcher.matches();
+	}
+
 	private void createNewScope() {
 		scopeStack.push(localScope);
 		localScope = new Scope();
 	}
 
-	private void parseIfWhile(Matcher matcher) throws ParsingException {
-		String conditionString = matcher.group(2);
-		for (String condition: conditionString.split("\\|\\||&&")) {
-			Matcher conditionMatcher = SINGLE_VALUE.matcher(condition);
-			if (conditionMatcher.matches()) {
-				String result = conditionMatcher.group(1);
-				Variable boolVariable = new Variable("boolean", "test", false);
-				if (Variable.isNameValid(result)) {
-					Variable variable = getMostSpecificVariable(result, (Stack<Scope>)scopeStack.clone());
-					if (variable.getValue() != null) {
-						boolVariable.setValue(variable.getValue());
-					} else {
-						throw new UninitializedVariableException();
-					}
-				} else {
-					boolVariable.setValue(result);
-				}
+	private void parseVariableDeclarationLine(Matcher matcher) throws ParsingException {
+		String variableType = matcher.group(1);
+		if (matcher.group(2).startsWith(DELIMITER) || matcher.group(2).endsWith(DELIMITER)) {
+			throw new IllegalLineException();
+		}
+		for (String section: matcher.group(2).split(DELIMITER)) {
+			Matcher declarationOnlyMatcher = SINGLE_VALUE.matcher(section);
+			Matcher assignmentMatcher = VARIABLE_ASSIGNMENT.matcher(section);
+			if (assignmentMatcher.matches()) {
+				String variableName = assignmentMatcher.group(1);
+				Variable variable = new Variable(variableType, variableName, false);
+				localScope.addVariable(variableName, variable);
+				assignValue(assignmentMatcher, variable);
+			} else if (declarationOnlyMatcher.matches()) {
+				String variableName = declarationOnlyMatcher.group(1);
+				localScope.addVariable(variableName, new Variable(variableType, variableName, false));
 			} else {
 				throw new IllegalLineException();
 			}
 		}
+	}
+
+	private void parseFinalVariableDeclarationLine(Matcher matcher) throws ParsingException {
+		String variableType = matcher.group(1);
+		for (String section: matcher.group(2).split(DELIMITER)) {
+			Matcher assignmentMatcher = VARIABLE_ASSIGNMENT.matcher(section);
+			if (assignmentMatcher.matches()) {
+				String variableName = assignmentMatcher.group(1);
+				Variable variable = new Variable(variableType, variableName, true);
+				localScope.addVariable(variableName, variable);
+				assignValue(assignmentMatcher, variable);
+			} else {
+				throw new IllegalLineException();
+			}
+		}
+	}
+
+	private void parseVariableAssignmentLine(Matcher matcher) throws ParsingException {
+		String variableName = matcher.group(1);
+		Variable assignedVariable;
+		assignedVariable = getMostSpecificVariable(variableName, (Stack<Scope>)scopeStack.clone());
+		assignValue(matcher, assignedVariable);
+	}
+
+	private void assignValue(Matcher matcher, Variable variable) throws ParsingException {
+		if (Variable.isNameValid(matcher.group(2))) {
+			String variableString = matcher.group(2);
+			Variable assignedVariable = getMostSpecificVariable(variableString, (Stack<Scope>)scopeStack.clone());
+			variable.copyVariableValue(assignedVariable);
+		} else {
+			String variableValue = matcher.group(2);
+			variable.setValue(variableValue);
+		}
+	}
+
+	private void parseMethodDeclarationLine(Matcher matcher) throws ParsingException {
+		List<Variable> methodParameters = new ArrayList<Variable>();
+		String methodName = matcher.group(1);
+		String parameters = matcher.group(2);
+		if (! parameters.matches("\\s*")) {
+			for (String parameter: parameters.split(DELIMITER)) {
+				Matcher parameterMatcher = METHOD_PARAMETER.matcher(parameter);
+				if (parameterMatcher.matches()) {
+					boolean isFinal = false;
+					if (parameterMatcher.group(1) != null) {
+						isFinal = true;
+					}
+					String variableType = parameterMatcher.group(2);
+					String variableName = parameterMatcher.group(3);
+					methodParameters.add(new Variable(variableType, variableName, isFinal));
+				} else {
+					throw new IllegalLineException();
+				}
+			}
+		}
+		globalScope.addMethod(methodName, new Method(methodName, methodParameters));
 	}
 
 	private void parseMethodCall(Matcher matcher) throws ParsingException {
@@ -205,81 +268,26 @@ public class Parser {
 		globalScope.getMethod(methodName).call(methodArguments);
 	}
 
-	private void parseMethodDeclarationLine(Matcher matcher) throws ParsingException {
-		List<Variable> methodParameters = new ArrayList<Variable>();
-		String methodName = matcher.group(1);
-		String parameters = matcher.group(2);
-		if (! parameters.matches("\\s*")) {
-			for (String parameter: parameters.split(DELIMITER)) {
-				Matcher parameterMatcher = METHOD_PARAMETER.matcher(parameter);
-				if (parameterMatcher.matches()) {
-					boolean isFinal = false;
-					if (parameterMatcher.group(1) != null) {
-						isFinal = true;
+	private void parseIfWhile(Matcher matcher) throws ParsingException {
+		String conditionString = matcher.group(2);
+		for (String condition: conditionString.split("\\|\\||&&")) {
+			Matcher conditionMatcher = SINGLE_VALUE.matcher(condition);
+			if (conditionMatcher.matches()) {
+				String result = conditionMatcher.group(1);
+				Variable boolVariable = new Variable("boolean", "test", false);
+				if (Variable.isNameValid(result)) {
+					Variable variable = getMostSpecificVariable(result, (Stack<Scope>)scopeStack.clone());
+					if (variable.getValue() != null) {
+						boolVariable.setValue(variable.getValue());
+					} else {
+						throw new UninitializedVariableException();
 					}
-					String variableType = parameterMatcher.group(2);
-					String variableName = parameterMatcher.group(3);
-					methodParameters.add(new Variable(variableType, variableName, isFinal));
 				} else {
-					throw new IllegalLineException();
+					boolVariable.setValue(result);
 				}
-			}
-		}
-		globalScope.addMethod(methodName, new Method(methodName, methodParameters));
-	}
-
-	private void parseFinalVariableDeclarationLine(Matcher matcher) throws ParsingException {
-		String variableType = matcher.group(1);
-		for (String section: matcher.group(2).split(DELIMITER)) {
-			Matcher assignmentMatcher = VARIABLE_ASSIGNMENT.matcher(section);
-			if (assignmentMatcher.matches()) {
-				String variableName = assignmentMatcher.group(1);
-				Variable variable = new Variable(variableType, variableName, true);
-				localScope.addVariable(variableName, variable);
-				assignValue(assignmentMatcher, variable);
 			} else {
 				throw new IllegalLineException();
 			}
-		}
-	}
-
-	private void parseVariableAssignmentLine(Matcher matcher) throws ParsingException {
-		String variableName = matcher.group(1);
-		Variable assignedVariable;
-		assignedVariable = getMostSpecificVariable(variableName, (Stack<Scope>)scopeStack.clone());
-		assignValue(matcher, assignedVariable);
-	}
-
-	private void parseVariableDeclarationLine(Matcher matcher) throws ParsingException {
-		String variableType = matcher.group(1);
-		if (matcher.group(2).startsWith(DELIMITER) || matcher.group(2).endsWith(DELIMITER)) {
-			throw new IllegalLineException();
-		}
-		for (String section: matcher.group(2).split(DELIMITER)) {
-			Matcher declarationOnlyMatcher = SINGLE_VALUE.matcher(section);
-			Matcher assignmentMatcher = VARIABLE_ASSIGNMENT.matcher(section);
-			if (assignmentMatcher.matches()) {
-				String variableName = assignmentMatcher.group(1);
-				Variable variable = new Variable(variableType, variableName, false);
-				localScope.addVariable(variableName, variable);
-				assignValue(assignmentMatcher, variable);
-			} else if (declarationOnlyMatcher.matches()) {
-				String variableName = declarationOnlyMatcher.group(1);
-				localScope.addVariable(variableName, new Variable(variableType, variableName, false));
-			} else {
-				throw new IllegalLineException();
-			}
-		}
-	}
-
-	private void assignValue(Matcher matcher, Variable variable) throws ParsingException {
-		if (Variable.isNameValid(matcher.group(2))) {
-			String variableString = matcher.group(2);
-			Variable assignedVariable = getMostSpecificVariable(variableString, (Stack<Scope>)scopeStack.clone());
-			variable.copyVariableValue(assignedVariable);
-		} else {
-			String variableValue = matcher.group(2);
-			variable.setValue(variableValue);
 		}
 	}
 
@@ -302,31 +310,6 @@ public class Parser {
 				}
 			}
 		}
-
-		/*for (Scope scope: scopeStack) {
-			Variable variable = scope.getVariable(variableString);
-			if (variable != null) {
-				if (scope != globalScope) {
-					return variable;
-				} else {
-					Variable copyVariable = new Variable(variable);
-					localScope.addVariable(variable.getName(), copyVariable);
-					return copyVariable;
-				}
-			}
-		}*/
 		throw new UndeclaredVariableException();
-	}
-
-	private static boolean isComment(String line) {
-		Matcher matcher = COMMENT_LINE.matcher(line);
-
-		return matcher.find();
-	}
-
-	private static boolean isWhitespaceOnly(String line) {
-		Matcher matcher = WHITESPACE_LINE.matcher(line);
-
-		return matcher.matches();
 	}
 }

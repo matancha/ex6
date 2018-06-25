@@ -28,14 +28,6 @@ public class Variable {
 		this.value = copiedVariable.getValue();
 	}
 
-	public String getType() {
-		return type;
-	}
-
-	public boolean getIsFinal() {
-		return isFinal;
-	}
-
 	public static boolean isNameValid(String name) {
 		if (ILLEGAL_VARIABLE_NAMES.contains(name)) {
 			return false;
@@ -45,6 +37,18 @@ public class Variable {
 		Matcher matcher = pattern.matcher(name);
 
 		return matcher.matches();
+	}
+
+	public static String getVariableTypesRegex() {
+		return String.join("|", VARIABLE_TYPES);
+	}
+
+	public String getType() {
+		return type;
+	}
+
+	public boolean getIsFinal() {
+		return isFinal;
 	}
 
 	public String getName(){
@@ -89,18 +93,6 @@ public class Variable {
 		return matcher.matches();
 	}
 
-	public void copyVariableValue(Variable copiedVariable) throws ParsingException {
-		String copiedValue = copiedVariable.getValue();
-		if (copiedValue == null) {
-			throw new UninitializedVariableException();
-		}
-		setValue(copiedValue);
-	}
-
-	public static String getVariableTypesRegex() {
-		return String.join("|", VARIABLE_TYPES);
-	}
-
 	public void setDefaultValue() throws ParsingException {
 		switch(type) {
 			case "int":
@@ -121,5 +113,13 @@ public class Variable {
 			default:
 				throw new InvalidValueException();
 		}
+	}
+
+	public void copyVariableValue(Variable copiedVariable) throws ParsingException {
+		String copiedValue = copiedVariable.getValue();
+		if (copiedValue == null) {
+			throw new UninitializedVariableException();
+		}
+		setValue(copiedValue);
 	}
 }

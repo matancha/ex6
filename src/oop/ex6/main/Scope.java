@@ -11,6 +11,20 @@ public class Scope {
 		this.nameToMethod = new HashMap<String, Method>();
 	}
 
+	public Variable getVariable(String variableName) {
+		if (isVariableInScope(variableName)) {
+			return nameToVariable.get(variableName);
+		}
+		return null;
+	}
+
+	public Method getMethod(String methodName) throws UndeclaredMethodException {
+		if (! isMethodInScope(methodName)) {
+			throw new UndeclaredMethodException();
+		}
+		return nameToMethod.get(methodName);
+	}
+
 	public void addVariable(String variableName, Variable variableObj) throws DoubleDeclarationException {
 		if (isVariableInScope(variableName)) {
 			throw new DoubleDeclarationException();
@@ -31,19 +45,5 @@ public class Scope {
 
 	public boolean isMethodInScope(String methodName) {
 		return nameToMethod.containsKey(methodName);
-	}
-
-	public Variable getVariable(String variableName) {
-		if (isVariableInScope(variableName)) {
-			return nameToVariable.get(variableName);
-		}
-		return null;
-	}
-
-	public Method getMethod(String methodName) throws UndeclaredMethodException {
-		if (! isMethodInScope(methodName)) {
-			throw new UndeclaredMethodException();
-		}
-		return nameToMethod.get(methodName);
 	}
 }
