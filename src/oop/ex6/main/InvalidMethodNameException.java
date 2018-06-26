@@ -2,7 +2,7 @@ package oop.ex6.main;
 
 public class InvalidMethodNameException extends ParsingException {
 	@Override
-	public String getMsg() {
+	public String getMessage() {
 		return "Invalid method name";
 	}
 }

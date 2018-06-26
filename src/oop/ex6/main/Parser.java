@@ -7,7 +7,7 @@ import java.util.regex.*;
 public class Parser {
 	private static final Pattern SINGLE_VALUE = Pattern.compile("\\s*(\\S+)\\s*");
 	private static final Pattern VARIABLE_ASSIGNMENT =
-			Pattern.compile("\\s*([^=\\s]+)\\s*=\\s*((\\'.*\\'|\\\".*\\\"|\\S*))\\s*");
+			Pattern.compile("\\s*([^=\\s]+)\\s*=\\s*(\\'.*\\'|\\\".*\\\"|\\S*)\\s*");
 	private static final Pattern COMMENT_LINE = Pattern.compile("^[\\/][\\/]");
 	private static final Pattern WHITESPACE_LINE = Pattern.compile("\\s*");
 	private static final Pattern VARIABLE_DECLARATION_LINE =
@@ -123,7 +123,6 @@ public class Parser {
 					String methodName = methodDeclarationMatcher.group(1);
 					for (Variable variable: globalScope.getMethod(methodName).getArguments()) {
 						localScope.addVariable(variable.getName(), variable);
-						variable.setDefaultValue();
 					}
 				} else if (ifWhileMatcher.matches()) {
 					createNewScope();
@@ -231,7 +230,9 @@ public class Parser {
 					}
 					String variableType = parameterMatcher.group(2);
 					String variableName = parameterMatcher.group(3);
-					methodParameters.add(new Variable(variableType, variableName, isFinal));
+					Variable methodVariable = new Variable(variableType, variableName, isFinal);
+					methodVariable.setDefaultValue();
+					methodParameters.add(methodVariable);
 				} else {
 					throw new IllegalLineException();
 				}

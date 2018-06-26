@@ -4,11 +4,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import org.junit.Test;
-import sun.reflect.annotation.ExceptionProxy;
-
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.util.Scanner;
+import java.io.*;
 
 public class ParserTest {
     @Test
@@ -221,7 +217,7 @@ public class ParserTest {
         try {
             parseObj.parse(filePath);
         } catch (ParsingException e) {
-            System.err.println(parseObj.getLineNumber() + ": " + e.getMsg());
+            System.err.println(parseObj.getLineNumber() + ": " + e.getMessage());
             fail();
         }
     }
