@@ -37,6 +37,7 @@ public class Sjavac {
 			System.out.println(VALID_CODE_EXIT_CODE);
 		} catch (ParsingException e) {
 			System.out.println(INVALID_CODE_EXIT_CODE);
+			System.err.println(e.getMessage());
 		} catch (IOError|FileNotFoundException e) {
 			System.out.println(PROGRAM_ERROR_EXIT_CODE);
 			System.err.println(e.getMessage());

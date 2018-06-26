@@ -1,0 +1,83 @@
+matancha
+
+
+==========================
+=    File Description    =
+==========================
+
+Sjavac.java - Main module responsible for general program flow
+Parser.java - Class responsible for sjava code parsing
+
+Sjava-Objects:
+  - Scope.java - Represents an s-java scope (if/while scope, method scope)
+  - Variable.java - Represents an s-java variable
+  - Method.java - Represents an s-java method
+
+Exceptions:
+  - DoubleDeclarationException - Exception thrown if a variable is declared twice
+  - FinalVariableAssignmentException - Exception thrown if trying to assign to a final variable after
+      declaration.
+  - IllegalLineException - Exception thrown if a line is classified as illegal
+  - InvalidArgumentsNumber - Exception thrown if a method is called with the wrong number of arguments
+  - InvalidMethodNameException - Exception thrown if a method is given an illegal name
+  - InvalidVariableNameException - Exception thrown if a variable is given an illegal name
+  - InvalidValueException - Exception thrown if a method is given an invalid value
+  - UndeclaredMethodException - Exception thrown if an undeclared method is called
+  - UndeclaredVariableException - Exception thrown if an undeclared variable is tried to be used
+  - UninitializedVariableException - Exception thrown if an uninitialized variable is tried to be used
+
+
+================
+=    Design    =
+================
+The program is separated to different modules -
+  - A main class which only runs the program
+  - A Parser which is the main validation engine
+  - Different modules which represent objects in s-java for modular use
+
+The design of the program is intended so each component will have its own zone of responsibility and
+  each module will have no knowledge of the others' implementation. This leading principle will enable
+  the program to be easily modified and easily extensible.
+
+================================
+=    Implementation details    =
+================================
+For the main parsing methods of the program I have decided to use regex. Regex was a great tool for this
+  mission - it allowed me with one piece of code to check if a string matches a certain pattern, but that
+  pattern could be more than one thing - it could have some optional components (like spaces/no spaces, or even
+  whole sections which are different).
+
+To represent the nested character of scopes I decided to use a data structure that represents their hierarchy -
+a Stack. A stack matches exactly how scopes are managed - when a block suffix is encountered the most
+inner scope is ended - that is, it is a LIFO type of handling.
+
+==============================
+=    Answers to questions    =
+==============================
+
+6.1 -
+In my program, I made the decision to handle the program flow using exceptions. I think this decision was good
+  for two reasons:
+  1. While coding and testing I was able to know exactly why my program decided an s-java code was invalid. As there
+  are a lot of illegal actions that can cause the program to fail, an error message which points to a specific
+  problem helped me immensely.
+  Moreover, the added benefit is that anyone using my program will know himself why his s-java is bad instead of
+  just getting an unhelpful boolean answer.
+  2. It allowed me to write code in an undefensive manner. If I didn't use exceptions, I'd have to check if
+  the conditions for performing every action exist and this would involve the loss of the fine separation between
+  modules. This would have broke OOP principles and would burden a user using the several classes immensely.
+
+6.2 -
+
+6.3 -
+\s*void\s+(\S+)\s*[(](.*)?[)]\s*[{]\s* - Regex for matching method declaration lines.
+\s* - Matches spaces optionally if they exist
+void - matches void
+\s+ - Matches spaces but forces there to be at least one
+(\S+) - Matches anything except spaces and saves the output in a capturing group (to be use as this is the method
+  name)
+[(](.*)?[)] - Matches () and everything between them - (.*)? - anything including nothing
+
+\s*return\s*;\s* - Regex for matching return line.
+\s* - Matches spaces optionally if they exist
+return, ; - matches literally

@@ -14,6 +14,27 @@ public class Variable {
 					"false", "return"));
 	/* Variable name regex */
 	private static final String VARIABLE_NAME_REGEX = "([a-zA-Z]|[_][\\w])[\\w]*";
+	/* Int value regex */
+	private static final String INT_REGEX = "-?\\d+";
+	/* Double value regex */
+	private static final String DOUBLE_REGEX = "-?(\\d+[.])?\\d+";
+	/* String value regex */
+	private static final String STRING_REGEX = "\"[\\s\\S]*\"";
+	/* Char value regex */
+	private static final String CHAR_REGEX = "'\\S?'";
+	/* Boolean value regex */
+	private static final String BOOLEAN_REGEX = "(-?(\\d+[.])?\\d+|true|false)";
+	/* Int default value */
+	private static final String INT_DEFAULT_VALUE = "0";
+	/* Double default value */
+	private static final String DOUBLE_DEFAULT_VALUE = "0.0";
+	/* String default value */
+	private static final String STRING_DEFAULT_VALUE = "\"\"";
+	/* Char default value */
+	private static final String CHAR_DEFAULT_VALUE = "''";
+	/* Boolean default value */
+	private static final String BOOLEAN_DEFAULT_VALUE = "true";
+
 	/* Variable name */
 	private String name;
 	/* Variable type */
@@ -129,19 +150,19 @@ public class Variable {
 		Pattern pattern;
 		switch(type) {
 			case "int":
-				pattern = Pattern.compile("-?\\d+");
+				pattern = Pattern.compile(INT_REGEX);
 				break;
 			case "double":
-				pattern = Pattern.compile("-?(\\d+[.])?\\d+");
+				pattern = Pattern.compile(DOUBLE_REGEX);
 				break;
 			case "String":
-				pattern = Pattern.compile("\"[\\s\\S]*\"");
+				pattern = Pattern.compile(STRING_REGEX);
 				break;
 			case "char":
-				pattern = Pattern.compile("'\\S?'");
+				pattern = Pattern.compile(CHAR_REGEX);
 				break;
 			case "boolean":
-				pattern = Pattern.compile("(-?(\\d+[.])?\\d+|true|false)");
+				pattern = Pattern.compile(BOOLEAN_REGEX);
 				break;
 			default:
 				throw new InvalidValueException();
@@ -157,19 +178,19 @@ public class Variable {
 	public void setDefaultValue() throws ParsingException {
 		switch(type) {
 			case "int":
-				setValue("0");
+				setValue(INT_DEFAULT_VALUE);
 				break;
 			case "double":
-				setValue("0.0");
+				setValue(DOUBLE_DEFAULT_VALUE);
 				break;
 			case "String":
-				setValue("\"\"");
+				setValue(STRING_DEFAULT_VALUE);
 				break;
 			case "char":
-				setValue("''");
+				setValue(CHAR_DEFAULT_VALUE);
 				break;
 			case "boolean":
-				setValue("true");
+				setValue(BOOLEAN_DEFAULT_VALUE);
 				break;
 			default:
 				throw new InvalidValueException();
