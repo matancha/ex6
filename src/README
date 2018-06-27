@@ -68,6 +68,22 @@ In my program, I made the decision to handle the program flow using exceptions. 
   modules. This would have broke OOP principles and would burden a user using the several classes immensely.
 
 6.2 -
+Different methods' types -
+  modifications to the Method class:
+    - Adding a return type attribute
+  modifications to the Parser class:
+    - Verifying that a variable appearing in a return statement matches the return type
+    attribute of the method
+    - Adding a method the parses a function call statement in two ways:
+      Parse for calling only
+      Parse for calling with a return value, and verifying using the already existing assignment
+      verification the reference matches the value
+
+Inheritance of files -
+  modifications to the Parser class:
+    - Parsing a new valid line - import file
+    - Adding all the methods declared in the imported file to the global scope.
+    - Handling duplicate method names in the desired way (maybe most specific method like inheritance).
 
 6.3 -
 \s*void\s+(\S+)\s*[(](.*)?[)]\s*[{]\s* - Regex for matching method declaration lines.
