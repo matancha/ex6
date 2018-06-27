@@ -34,6 +34,8 @@ public class Variable {
 	private static final String CHAR_DEFAULT_VALUE = "''";
 	/* Boolean default value */
 	private static final String BOOLEAN_DEFAULT_VALUE = "true";
+	/* or delimiter regex */
+	private static final String OR_DELIMITER_REGEX = "|";
 
 	/* Variable name */
 	private final String name;
@@ -64,11 +66,9 @@ public class Variable {
 	 * Copy constructor
 	 * @param copiedVariable variable object to copy
 	 */
-	public Variable(Variable copiedVariable) {
-		this.type = copiedVariable.getType();
-		this.name = copiedVariable.getName();
-		this.isFinal = copiedVariable.getIsFinal();
-		this.value = copiedVariable.getValue();
+	public Variable(Variable copiedVariable) throws InvalidVariableNameException {
+		this(copiedVariable.type, copiedVariable.name, copiedVariable.isFinal);
+		this.value = copiedVariable.value;
 	}
 
 	/**
@@ -91,7 +91,7 @@ public class Variable {
 	 * @return variable type regex
 	 */
 	public static String getVariableTypesRegex() {
-		return String.join("|", VARIABLE_TYPES);
+		return String.join(OR_DELIMITER_REGEX, VARIABLE_TYPES);
 	}
 
 	/**
@@ -108,14 +108,6 @@ public class Variable {
 	 */
 	public String getType() {
 		return type;
-	}
-
-	/**
-	 * Gets is variable is final
-	 * @return true - if final
-	 */
-	public boolean getIsFinal() {
-		return isFinal;
 	}
 
 	/**
