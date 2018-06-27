@@ -36,13 +36,13 @@ public class Variable {
 	private static final String BOOLEAN_DEFAULT_VALUE = "true";
 
 	/* Variable name */
-	private String name;
+	private final String name;
 	/* Variable type */
-	private String type;
+	private final String type;
 	/* Variable value */
 	private String value;
 	/* Flag indicating whether a variable is final */
-	private boolean isFinal;
+	private final boolean isFinal;
 
 	/**
 	 * Constructor

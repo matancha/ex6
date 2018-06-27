@@ -9,9 +9,9 @@ public class Method {
 	/* Regex for valid method name */
 	private static final String VALID_NAME_REGEX = "[a-zA-Z][\\w]*";
 	/* Name of method */
-	private String name;
+	private final String name;
 	/* Arguments supplied to method */
-	private List<Variable> arguments;
+	private final List<Variable> arguments;
 
 	/**
 	 * Method constructor
