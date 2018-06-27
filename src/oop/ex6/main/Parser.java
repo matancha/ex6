@@ -301,8 +301,18 @@ public class Parser {
 	 */
 	private void parseVariableAssignmentLine(Matcher matcher) throws ParsingException {
 		String variableName = matcher.group(1);
-		Variable assignedVariable = getMostSpecificVariable(variableName, (Stack<Scope>) scopes.clone());
+		Variable assignedVariable = getMostSpecificVariable(variableName, getClonedStack());
 		assignValue(matcher, assignedVariable);
+	}
+
+	/**
+	 * Clone the Stack object (without warnings)
+	 * @return copy
+	 */
+	private Stack<Scope> getClonedStack() {
+		Stack<Scope> scopeStackCopy = new Stack<Scope>();
+		scopeStackCopy.addAll(scopes);
+		return scopeStackCopy;
 	}
 
 	/**
@@ -314,7 +324,7 @@ public class Parser {
 	private void assignValue(Matcher matcher, Variable variable) throws ParsingException {
 		if (Variable.isNameValid(matcher.group(2))) {
 			String variableString = matcher.group(2);
-			Variable assignedVariable = getMostSpecificVariable(variableString, (Stack<Scope>) scopes.clone());
+			Variable assignedVariable = getMostSpecificVariable(variableString, getClonedStack());
 			variable.copyVariableValue(assignedVariable);
 		} else {
 			String variableValue = matcher.group(2);
@@ -368,7 +378,7 @@ public class Parser {
 					String variableString = argumentMatcher.group(1);
 					if (Variable.isNameValid(variableString)) {
 						Variable variable = getMostSpecificVariable(variableString,
-								(Stack<Scope>) scopes.clone());
+								getClonedStack());
 						if (variable.getValue() != null) {
 							methodArguments.add(variable.getValue());
 						} else {
@@ -398,7 +408,7 @@ public class Parser {
 				String result = conditionMatcher.group(1);
 				Variable boolVariable = new Variable("boolean", "test", false);
 				if (Variable.isNameValid(result)) {
-					Variable variable = getMostSpecificVariable(result, (Stack<Scope>) scopes.clone());
+					Variable variable = getMostSpecificVariable(result, getClonedStack());
 					if (variable.getValue() != null) {
 						boolVariable.setValue(variable.getValue());
 					} else {
